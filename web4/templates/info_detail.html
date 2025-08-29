@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Original vs Modified View</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: row; /* sidebar layout */
+      height: 100vh;
+    }
+    /* Sidebar styling */
+    .sidebar {
+      width: 160px;
+      background: #222;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      font-weight: bold;
+      font-size: 18px;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .sidebar a {
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .sidebar a:hover {
+      background: #444;
+    }
+    .sidebar a.active {
+      background: #4caf50;
+      pointer-events: none;
+    }
+
+    /* Content area */
+    .content-area {
+      margin-left: 160px;
+      flex-grow: 1;
+      overflow-y: auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-wrapper {
+      display: flex;
+      flex-grow: 1;
+    }
+    .panel {
+      width: 50%;
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid #ccc;
+    }
+    .panel:last-child {
+      border-right: none;
+    }
+    .block {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fdfdfd;
+    }
+    h2 {
+      text-align: center;
+      margin: 10px 0;
+    }
+    .note {
+      font-style: italic;
+      color: gray;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a href="/" class="{% if request.path == '/' %}active{% endif %}">🏠 Main</a>
+  <a href="/history" class="{% if request.path == '/history' %}active{% endif %}">📜 History</a>
+</div>
+
+<div class="content-area">
+  <div class="panel-wrapper">
+    <div class="panel">
+      <h2>🟠 Original Blocks</h2>
+      {% for block in original_blocks %}
+        <div class="block">
+          {% if block.tag == 'img' %}
+            <img src="{{ block.src }}" style="max-width: 100%;" />
+          {% else %}
+            <p><strong>{{ block.label }}</strong>: {{ block.content }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="panel">
+      <h2>🟢 Modified Blocks</h2>
+      {% if modified_blocks %}
+        {% for block in modified_blocks %}
+          <div class="block">
+            {% if block.tag == 'img' %}
+              {% if block.src %}
+                <img src="{{ block.src }}" style="max-width: 100%;" />
+                {% if original_blocks[loop.index0].src == block.src %}
+                  <div class="note">Image unchanged</div>
+                {% else %}
+                  <div class="note">Image modified</div>
+                {% endif %}
+              {% else %}
+                <div class="note">No modification found for this image.</div>
+              {% endif %}
+            {% else %}
+              <p><strong>{{ block.label }}</strong>: {{ block.content }}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>No modifications made to this content.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

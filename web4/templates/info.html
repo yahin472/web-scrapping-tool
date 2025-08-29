@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Page Info</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: row; /* sidebar layout */
+      height: 100vh;
+      background: #fafafa;
+    }
+    /* Sidebar styling */
+    .sidebar {
+      width: 160px;
+      background: #222;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      font-weight: bold;
+      font-size: 18px;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .sidebar a {
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .sidebar a:hover {
+      background: #444;
+    }
+    .sidebar a.active {
+      background: #4caf50;
+      pointer-events: none;
+    }
+
+    /* Content area */
+    .content-area {
+      margin-left: 160px;
+      flex-grow: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .info-box {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: auto;
+    }
+    .info-box p {
+      margin: 10px 0;
+    }
+    .label {
+      font-weight: bold;
+    }
+    h2 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <a href="/" class="{% if request.path == '/' %}active{% endif %}">🏠 Main</a>
+    <a href="/history" class="{% if request.path == '/history' %}active{% endif %}">📜 History</a>
+  </div>
+
+  <div class="content-area">
+    <div class="info-box">
+      <h2>Page Info</h2>
+      <p><span class="label">URL:</span> {{ entry.url }}</p>
+      <p><span class="label">Scraped On:</span> {{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+      <p><span class="label">Title:</span> {{ entry.title }}</p>
+      <p><span class="label">Meta Description:</span> {{ entry.description }}</p>
+      <p><span class="label">Word Count:</span> {{ entry.word_count }}</p>
+      <p><span class="label">Paragraphs:</span> {{ entry.paragraphs }}</p>
+      <p><span class="label">Headers:</span> {{ entry.headers }}</p>
+      <p><span class="label">Images:</span> {{ entry.images }}</p>
+      <p><span class="label">Estimated Google Ranking:</span> <i>Coming soon...</i></p>
+    </div>
+  </div>
+</body>
+</html>

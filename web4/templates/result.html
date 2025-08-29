@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Selected Blocks</title>
+</head>
+<body style="font-family: Arial; padding: 20px;">
+  <h2>📦 Selected Block Results</h2>
+  {% if blocks %}
+    {% for block in blocks %}
+      <div style="margin-bottom: 20px;">
+        {% if block.tag == 'img' %}
+          <img src="{{ block.src }}" style="max-width: 300px;" />
+        {% else %}
+          <p><strong>{{ block.label }}</strong>: {{ block.content }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No matching blocks found.</p>
+  {% endif %}
+  <a href="/">← Back to Home</a>
+</body>
+</html

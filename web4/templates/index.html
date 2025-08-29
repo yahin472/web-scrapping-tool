@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Web Scraper with Dual Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: row; /* changed for sidebar layout */
+      height: 100vh;
+    }
+    /* Sidebar styling */
+    .sidebar {
+      width: 160px;
+      background: #222;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      font-weight: bold;
+      font-size: 18px;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .sidebar a {
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .sidebar a:hover {
+      background: #444;
+    }
+    .sidebar a.active {
+      background: #4caf50;
+      pointer-events: none;
+    }
+
+    /* Content area adjusted for sidebar */
+    .content-area {
+      margin-left: 160px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .url-form {
+      padding: 15px;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .url-form form {
+      flex-grow: 1;
+    }
+    .url-form input {
+      width: 60%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .url-form button {
+      padding: 10px 20px;
+    }
+    .top-right-btn {
+      margin-left: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .panel-wrapper {
+      display: flex;
+      height: calc(100vh - 70px);
+    }
+    .panel {
+      width: 50%;
+      padding: 15px;
+      overflow-y: auto;
+      border-right: 1px solid #ccc;
+    }
+    .block {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fafafa;
+      position: relative;
+    }
+    .menu {
+      margin-top: 8px;
+    }
+    button.small {
+      margin: 2px;
+      font-size: 12px;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a href="/" class="{% if request.path == '/' %}active{% endif %}">🏠 Main</a>
+  <a href="/history" class="{% if request.path == '/history' %}active{% endif %}">📜 History</a>
+</div>
+
+<div class="content-area">
+  <div class="url-form">
+    <form method="POST" action="/scrape">
+      <input type="text" name="url" value="{{ url }}" placeholder="Enter URL to scrape..." required>
+      <button type="submit">Scrape</button>
+    </form>
+    <div class="top-right-btn">
+      <button onclick="saveModifications()">💾 Save</button>
+    </div>
+  </div>
+
+  <div class="panel-wrapper">
+    <div class="panel">
+      <h3>🟠 Original Blocks</h3>
+      {% for block in original_blocks %}
+        <div class="block">
+          {% if block.tag == 'img' %}
+            <img src="{{ block.src }}" style="max-width: 100%;" />
+            <div class="menu">
+              <input type="text" placeholder="Prompt..." id="prompt-{{ block.label }}">
+              <button class="small" onclick="img2img('{{ block.src }}', '{{ block.label }}')">🎨 Transform</button>
+            </div>
+          {% else %}
+            <p><strong>{{ block.label }}</strong>: {{ block.content }}</p>
+            <div class="menu">
+              <button class="small" onclick="transformText('{{ block.label }}', 'grammar')">📝 Grammar</button>
+              <button class="small" onclick="transformText('{{ block.label }}', 'rephrase')">🔁 Rephrase</button>
+              <button class="small" onclick="transformText('{{ block.label }}', 'expand')">🔎 Expand</button>
+              <button class="small" onclick="transformText('{{ block.label }}', 'tone_professional')">💼 Professional</button>
+              <button class="small" onclick="transformText('{{ block.label }}', 'tone_fun')">🎉 Fun</button>
+              <button class="small" onclick="transformText('{{ block.label }}', 'tone_sad')">😢 Sad</button>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="panel">
+      <h3>🟢 Modified Blocks</h3>
+      {% for block in modified_blocks %}
+        <div class="block" id="block-{{ block.label }}">
+          {% if block.tag == 'img' %}
+            <div class="progress-container" style="display:none; margin-bottom:8px;">
+              <div style="background:#ddd; width:100%; height:10px; border-radius:5px; overflow:hidden;">
+                <div class="progress-bar" style="background:#4caf50; width:0%; height:100%; transition: width 0.1s;"></div>
+              </div>
+              <div class="progress-text" style="text-align:right; font-size:12px;">0%</div>
+            </div>
+            <img src="{{ block.src }}" style="max-width: 100%;" />
+          {% else %}
+            <p><strong>{{ block.label }}</strong>: <span class="text">{{ block.content }}</span></p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  const currentEntryId = "{{ entry_id|default('') }}";
+
+  async function transformText(label, action) {
+    const block = document.getElementById("block-" + label);
+    const span = block.querySelector(".text");
+    const text = span.innerText;
+
+    span.innerText = "⏳ Processing...";
+    const res = await fetch("/transform", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, label, action })
+    });
+    const data = await res.json();
+    span.innerText = data.result;
+  }
+
+  async function img2img(url, label) {
+    const prompt = document.getElementById("prompt-" + label)?.value || "Transform this image";
+
+    const block = document.getElementById("block-" + label);
+    const progressContainer = block.querySelector(".progress-container");
+    const progressBar = progressContainer.querySelector(".progress-bar");
+    const progressText = progressContainer.querySelector(".progress-text");
+
+    progressContainer.style.display = "block";
+    progressBar.style.width = "0%";
+    progressText.textContent = "0%";
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      if (progress < 90) {
+        progress += Math.floor(Math.random() * 10) + 1;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + "%";
+        progressText.textContent = progress + "%";
+      }
+    }, 100);
+
+    try {
+      const res = await fetch("/img2img", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, prompt })
+      });
+      const data = await res.json();
+
+      clearInterval(interval);
+
+      progressBar.style.width = "100%";
+      progressText.textContent = "100%";
+
+      if (data.image) {
+        block.innerHTML = `
+          <div class="progress-container" style="margin-bottom:8px;">
+            <div style="background:#ddd; width:100%; height:10px; border-radius:5px; overflow:hidden;">
+              <div class="progress-bar" style="background:#4caf50; width:100%; height:100%;"></div>
+            </div>
+            <div class="progress-text" style="text-align:right; font-size:12px;">100%</div>
+          </div>
+          <img src="data:image/png;base64,${data.image}" style="max-width:100%" />
+        `;
+      } else {
+        progressContainer.style.display = "none";
+        alert("❌ Image transformation failed.");
+      }
+    } catch (err) {
+      clearInterval(interval);
+      progressContainer.style.display = "none";
+      alert("❌ Image transformation error: " + err.message);
+    }
+  }
+
+  async function saveModifications() {
+    const modifiedBlocks = {};
+    document.querySelectorAll(".panel .block").forEach(block => {
+      const id = block.id?.replace("block-", "");
+      const span = block.querySelector(".text");
+      if (id && span) {
+        modifiedBlocks[id] = span.innerText;
+      }
+    });
+
+    if (!currentEntryId) {
+      alert("⚠️ No entry ID found. Please scrape a URL first.");
+      return;
+    }
+
+    const response = await fetch("/save_modifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blocks: modifiedBlocks, entry_id: currentEntryId })
+    });
+
+    const result = await response.json();
+    alert(result.status || "✅ Saved!");
+  }
+</script>
+
+</body>
+</html>

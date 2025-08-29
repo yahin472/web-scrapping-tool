@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Scrape History</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: row; /* sidebar layout */
+      height: 100vh;
+    }
+    /* Sidebar styling */
+    .sidebar {
+      width: 160px;
+      background: #222;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      font-weight: bold;
+      font-size: 18px;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .sidebar a {
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .sidebar a:hover {
+      background: #444;
+    }
+    .sidebar a.active {
+      background: #4caf50;
+      pointer-events: none;
+    }
+
+    /* Content area */
+    .content-area {
+      margin-left: 160px;
+      flex-grow: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+    }
+    .entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    .entry div {
+      flex-grow: 1;
+    }
+    .buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .buttons a, .buttons form {
+      display: inline-block;
+      margin: 0;
+    }
+    .delete-btn, .clear-btn, .info-btn, .compare-btn {
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      color: white;
+      font-size: 14px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none; /* for a tags */
+    }
+    .delete-btn {
+      background: #e74c3c;
+    }
+    .clear-btn {
+      background: #e74c3c;
+    }
+    .info-btn {
+      background: #3498db;
+    }
+    .compare-btn {
+      background: #2ecc71;
+    }
+    .clear-wrapper {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <a href="/" class="{% if request.path == '/' %}active{% endif %}">🏠 Main</a>
+    <a href="/history" class="{% if request.path == '/history' %}active{% endif %}">📜 History</a>
+  </div>
+
+  <div class="content-area">
+    <h2>Scrape History</h2>
+    <form method="POST" action="/clear_history" onsubmit="return confirmClear()">
+      <button class="clear-btn" type="submit">Clear All</button>
+    </form>
+
+    <script>
+      function confirmClear() {
+        return confirm("Are you sure you want to clear the entire history?");
+      }
+    </script>
+
+    {% for entry in entries %}
+      <div class="entry">
+        <div>{{ entry.url }}</div>
+        <div class="buttons">
+          <a href="/info/{{ entry._id }}" class="info-btn">Info</a>
+          <a href="/info_detail/{{ entry._id }}" class="compare-btn">Compare</a>
+          <form method="POST" action="/delete/{{ entry._id }}" style="display:inline;">
+            <button class="delete-btn" type="submit">X</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>
